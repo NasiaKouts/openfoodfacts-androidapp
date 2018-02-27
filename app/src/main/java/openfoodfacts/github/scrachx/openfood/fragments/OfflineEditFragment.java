@@ -6,6 +6,8 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -32,6 +34,7 @@ import openfoodfacts.github.scrachx.openfood.models.SendProduct;
 import openfoodfacts.github.scrachx.openfood.models.SendProductDao;
 import openfoodfacts.github.scrachx.openfood.network.OpenFoodAPIClient;
 import openfoodfacts.github.scrachx.openfood.utils.Utils;
+import openfoodfacts.github.scrachx.openfood.views.MainActivity;
 import openfoodfacts.github.scrachx.openfood.views.SaveProductOfflineActivity;
 import openfoodfacts.github.scrachx.openfood.views.adapters.SaveListAdapter;
 
@@ -41,8 +44,10 @@ import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 public class OfflineEditFragment extends BaseFragment {
 
     public static final String LOG_TAG = "OFFLINE_EDIT";
-    @BindView(R.id.listOfflineSave) ListView listView;
-    @BindView(R.id.buttonSendAll) Button buttonSend;
+    @BindView(R.id.listOfflineSave)
+    ListView listView;
+    @BindView(R.id.buttonSendAll)
+    Button buttonSend;
     private List<SaveItem> saveItems;
     private String loginS, passS;
     private SendProductDao mSendProductDao;
@@ -64,7 +69,7 @@ public class OfflineEditFragment extends BaseFragment {
         loginS = settingsLogin.getString("user", "");
         passS = settingsLogin.getString("pass", "");
         boolean firstUse = settingsUsage.getBoolean("firstOffline", false);
-        if(!firstUse) {
+        if (!firstUse) {
             new MaterialDialog.Builder(getContext())
                     .title(R.string.title_info_dialog)
                     .content(R.string.text_offline_info_dialog)
@@ -106,53 +111,88 @@ public class OfflineEditFragment extends BaseFragment {
         return true;
     }
 
+    /**
+     * User has clicked "upload all" to upload the offline products.
+     */
     @OnClick(R.id.buttonSendAll)
     protected void onSendAllProducts() {
-        new MaterialDialog.Builder(getActivity())
-                .title(R.string.txtDialogsTitle)
-                .content(R.string.txtDialogsContentSend)
-                .positiveText(R.string.txtYes)
-                .negativeText(R.string.txtNo)
-                .onPositive((dialog, which) -> {
-                    OpenFoodAPIClient apiClient = new OpenFoodAPIClient(getActivity());
-                    final List<SendProduct> listSaveProduct = mSendProductDao.loadAll();
-                    for (final SendProduct product : listSaveProduct) {
-                        if (isEmpty(product.getBarcode()) || isEmpty(product.getImgupload_front())) {
-                            continue;
-                        }
+        if (!Utils.isAirplaneModeActive(getContext()) && Utils.isNetworkConnected(getContext()) && PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean("enableMobileDataUpload", true)) {
+            new MaterialDialog.Builder(getActivity())
+                    .title(R.string.txtDialogsTitle)
+                    .content(R.string.txtDialogsContentSend)
+                    .positiveText(R.string.txtYes)
+                    .negativeText(R.string.txtNo)
+                    .onPositive((dialog, which) -> uploadProducts())
+                    .show();
+        } else if (Utils.isAirplaneModeActive(getContext())){
+            new MaterialDialog.Builder(getActivity())
+                    .title(R.string.airplane_mode_active_dialog_title)
+                    .content(R.string.airplane_mode_active_dialog_message)
+                    .positiveText(R.string.airplane_mode_active_dialog_positive)
+                    .negativeText(R.string.airplane_mode_active_dialog_negative)
+                    .onPositive((dialog, which) -> startActivity(new Intent(Settings.ACTION_AIRPLANE_MODE_SETTINGS)))
+                    .show();
+        } else if (!Utils.isNetworkConnected(getContext())){
+            new MaterialDialog.Builder(getActivity())
+                    .title(R.string.device_offline_dialog_title)
+                    .content(R.string.device_offline_dialog_message)
+                    .positiveText(R.string.device_offline_dialog_positive)
+                    .negativeText(R.string.device_offline_dialog_negative)
+                    .onPositive((dialog, which) -> startActivity(new Intent(Settings.ACTION_SETTINGS)))
+                    .show();
+        } else if (!PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean("enableMobileDataUpload", true) && Utils.isConnectedToMobileData(getContext())){
+            new MaterialDialog.Builder(getActivity())
+                    .title(R.string.device_on_mobile_data_warning_title)
+                    .content(R.string.device_on_mobile_data_warning_message)
+                    .positiveText(R.string.device_on_mobile_data_warning_positive)
+                    .negativeText(R.string.device_on_mobile_data_warning_negative)
+                    .onPositive((dialog, which) -> ((MainActivity)getActivity()).moveToPreferences())
+                    .onNegative((dialog, which) -> uploadProducts())
+                    .show();
+        }
+    }
 
-                        if(!loginS.isEmpty() && !passS.isEmpty()) {
-                            product.setUserId(loginS);
-                            product.setPassword(passS);
-                        }
+    /**
+     * Upload the offline products.
+     */
+    private void uploadProducts(){
+        OpenFoodAPIClient apiClient = new OpenFoodAPIClient(getActivity());
+        final List<SendProduct> listSaveProduct = mSendProductDao.loadAll();
+        for (final SendProduct product : listSaveProduct) {
+            if (isEmpty(product.getBarcode()) || isEmpty(product.getImgupload_front())) {
+                continue;
+            }
 
-                        if(isNotEmpty(product.getImgupload_ingredients())) {
-                            product.compress(ProductImageField.INGREDIENTS);
-                        }
+            if (!loginS.isEmpty() && !passS.isEmpty()) {
+                product.setUserId(loginS);
+                product.setPassword(passS);
+            }
 
-                        if(isNotEmpty(product.getImgupload_nutrition())) {
-                            product.compress(ProductImageField.NUTRITION);
-                        }
+            if (isNotEmpty(product.getImgupload_ingredients())) {
+                product.compress(ProductImageField.INGREDIENTS);
+            }
 
-                        if(isNotEmpty(product.getImgupload_front())) {
-                            product.compress(ProductImageField.FRONT);
-                        }
+            if (isNotEmpty(product.getImgupload_nutrition())) {
+                product.compress(ProductImageField.NUTRITION);
+            }
 
-                        apiClient.post(getActivity(), product, value -> {
-                            if (value) {
-                                int productIndex = listSaveProduct.indexOf(product);
+            if (isNotEmpty(product.getImgupload_front())) {
+                product.compress(ProductImageField.FRONT);
+            }
 
-                                if (productIndex >= 0 && productIndex < saveItems.size()) {
-                                    saveItems.remove(productIndex);
-                                }
+            apiClient.post(getActivity(), product, value -> {
+                if (value) {
+                    int productIndex = listSaveProduct.indexOf(product);
 
-                                ((SaveListAdapter) listView.getAdapter()).notifyDataSetChanged();
-                                mSendProductDao.deleteInTx(mSendProductDao.queryBuilder().where(SendProductDao.Properties.Barcode.eq(product.getBarcode())).list());
-                            }
-                        });
+                    if (productIndex >= 0 && productIndex < saveItems.size()) {
+                        saveItems.remove(productIndex);
                     }
-                })
-                .show();
+
+                    ((SaveListAdapter) listView.getAdapter()).notifyDataSetChanged();
+                    mSendProductDao.deleteInTx(mSendProductDao.queryBuilder().where(SendProductDao.Properties.Barcode.eq(product.getBarcode())).list());
+                }
+            });
+        }
     }
 
     @Override
@@ -178,12 +218,12 @@ public class OfflineEditFragment extends BaseFragment {
         protected Context doInBackground(Context... ctx) {
             List<SendProduct> listSaveProduct = mSendProductDao.loadAll();
 
-            int imageIcon = R.drawable.ic_ok;
+            int imageIcon = R.drawable.ic_done_green_24dp;
 
             for (SendProduct product : listSaveProduct) {
                 if (isEmpty(product.getBarcode()) || isEmpty(product.getImgupload_front())
                         || isEmpty(product.getBrands()) || isEmpty(product.getWeight()) || isEmpty(product.getName())) {
-                    imageIcon = R.drawable.ic_no;
+                    imageIcon = R.drawable.ic_no_red_24dp;
                 }
 
                 Bitmap bitmap = Utils.decodeFile(new File(product.getImgupload_front()));

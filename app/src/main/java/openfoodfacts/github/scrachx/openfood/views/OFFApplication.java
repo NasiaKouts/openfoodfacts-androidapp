@@ -1,25 +1,35 @@
 package openfoodfacts.github.scrachx.openfood.views;
 
 
-import android.app.Application;
+import android.support.multidex.MultiDexApplication;
+import android.support.v7.app.AppCompatDelegate;
 
 import org.greenrobot.greendao.database.Database;
-import org.greenrobot.greendao.database.DatabaseOpenHelper;
 import org.greenrobot.greendao.query.QueryBuilder;
 
 import openfoodfacts.github.scrachx.openfood.BuildConfig;
+import openfoodfacts.github.scrachx.openfood.dagger.component.AppComponent;
+import openfoodfacts.github.scrachx.openfood.dagger.module.AppModule;
 import openfoodfacts.github.scrachx.openfood.models.DaoMaster;
 import openfoodfacts.github.scrachx.openfood.models.DaoSession;
 import openfoodfacts.github.scrachx.openfood.models.DatabaseHelper;
+import openfoodfacts.github.scrachx.openfood.utils.Utils;
 
-public class OFFApplication extends Application {
+public class OFFApplication extends MultiDexApplication {
 
     private DaoSession daoSession;
     private boolean DEBUG = false;
 
+    private static AppComponent appComponent;
+
+    public static AppComponent getAppComponent() {
+        return appComponent;
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
+        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
 
         // Use only during development: DaoMaster.DevOpenHelper (Drops all table on Upgrade!)
         // Use only during production: DatabaseHelper (see on Upgrade!)
@@ -41,6 +51,9 @@ public class OFFApplication extends Application {
         // DEBUG
         QueryBuilder.LOG_VALUES = DEBUG;
         QueryBuilder.LOG_SQL = DEBUG;
+
+        appComponent = AppComponent.Initializer.init(new AppModule(this));
+        appComponent.inject(this);
     }
 
     public DaoSession getDaoSession() {

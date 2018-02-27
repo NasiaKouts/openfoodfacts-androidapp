@@ -1,27 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.v4.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:isScrollContainer="false"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_gravity="fill_vertical"
     android:clipToPadding="false"
+    android:isScrollContainer="false"
     app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:paddingBottom="65dp">
 
         <ImageButton
             android:id="@+id/imageViewFront"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_gravity="center"
-            app:srcCompat="@drawable/ic_add_a_photo_black_48dp"
-            android:background="?android:selectableItemBackground"
             android:layout_marginTop="@dimen/activity_vertical_margin"
-            android:maxHeight="250dp" />
+            android:background="?android:selectableItemBackground"
+            android:maxHeight="250dp"
+            app:srcCompat="@drawable/ic_add_a_photo_black_48dp" />
 
         <TextView
             android:id="@+id/addPhotoLabel"
@@ -29,8 +30,7 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:text="@string/take_picture_front"
-            android:textStyle="bold"
-            />
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/textNameProduct"
@@ -43,6 +43,18 @@
             android:textIsSelectable="true"
             android:textSize="@dimen/font_larger"
             android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/imageGrade"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="@dimen/spacing_tiny"
+            android:layout_marginLeft="@dimen/spacing_normal"
+            android:layout_marginRight="@dimen/spacing_normal"
+            android:layout_marginTop="@dimen/spacing_normal"
+            android:clickable="true"
+            android:gravity="center" />
 
         <TextView
             android:id="@+id/textGenericNameProduct"
@@ -152,7 +164,20 @@
             android:id="@+id/textIngredientsOriginProduct"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:visibility="gone"
+            android:layout_marginBottom="@dimen/spacing_tiny"
+            android:layout_marginLeft="@dimen/spacing_normal"
+            android:layout_marginRight="@dimen/spacing_normal"
+            android:layout_marginTop="@dimen/spacing_tiny"
+            android:background="@drawable/textview_full"
+            android:padding="@dimen/spacing_small"
+            android:textIsSelectable="true"
+            android:textSize="@dimen/font_normal"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/textEmbCode"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/spacing_tiny"
             android:layout_marginLeft="@dimen/spacing_normal"
             android:layout_marginRight="@dimen/spacing_normal"
@@ -163,7 +188,7 @@
             android:textSize="@dimen/font_normal" />
 
         <TextView
-            android:id="@+id/textCityProduct"
+            android:id="@+id/textManufactureUrl"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/spacing_tiny"
@@ -172,6 +197,7 @@
             android:layout_marginTop="@dimen/spacing_tiny"
             android:background="@drawable/textview_full"
             android:padding="@dimen/spacing_small"
+            android:textColorLink="@color/light_blue_A700"
             android:textIsSelectable="true"
             android:textSize="@dimen/font_normal" />
 
@@ -204,10 +230,11 @@
         <Button
             android:id="@+id/buttonMorePictures"
             android:layout_width="250dp"
-            android:layout_marginTop="@dimen/spacing_tiny"
-            android:layout_gravity="center_horizontal"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="@dimen/spacing_tiny"
             android:text="@string/take_more_pictures" />
+
 
     </LinearLayout>
 

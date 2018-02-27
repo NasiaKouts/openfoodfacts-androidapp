@@ -8,9 +8,11 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+
 import net.steamcrafted.loadtoast.LoadToast;
 
 import java.io.IOException;
@@ -38,7 +40,8 @@ public class SplashActivity extends BaseActivity {
 
         settings = getSharedPreferences("prefs", 0);
         mAdditiveDao = Utils.getAppDaoSession(this).getAdditiveDao();
-
+        OpenFoodAPIClient client = new OpenFoodAPIClient(this);
+        client.getPackagerCodes();
         if((BuildConfig.FLAVOR.equals("off"))) {
             boolean firstRun = settings.getBoolean("firstRun", true);
 
@@ -51,7 +54,6 @@ public class SplashActivity extends BaseActivity {
                         .apply();
                 firstRun = false;
             }
-
             if (!firstRun) {
                 launchMainActivity();
             } else {
@@ -68,7 +70,7 @@ public class SplashActivity extends BaseActivity {
                 .setImagesFolderName("OFF_Images")
                 .saveInAppExternalFilesDir()
                 .setCopyExistingPicturesToPublicLocation(true);
-        Intent mainIntent = new Intent(SplashActivity.this, MainActivity.class);
+        Intent mainIntent = new Intent(SplashActivity.this, WelcomeActivity.class);
         startActivity(mainIntent);
         finish();
     }
@@ -89,8 +91,8 @@ public class SplashActivity extends BaseActivity {
         protected void onPreExecute() {
             super.onPreExecute();
             lt.setText(activity.getString(R.string.toast_retrieving));
-            lt.setBackgroundColor(activity.getResources().getColor(R.color.blue));
-            lt.setTextColor(activity.getResources().getColor(R.color.white));
+            lt.setBackgroundColor(ContextCompat.getColor(SplashActivity.this,R.color.blue));
+            lt.setTextColor(ContextCompat.getColor(SplashActivity.this,R.color.white));
             lt.show();
         }
 
@@ -161,7 +163,7 @@ public class SplashActivity extends BaseActivity {
 
                         editor.apply();
 
-                        Intent mainIntent = new Intent(SplashActivity.this, MainActivity.class);
+                        Intent mainIntent = new Intent(SplashActivity.this, WelcomeActivity.class);
                         startActivity(mainIntent);
                         finish();
                     });
